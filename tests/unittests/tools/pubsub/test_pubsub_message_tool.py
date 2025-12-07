@@ -160,3 +160,156 @@ def test_publish_message_exception(mock_get_publisher_client, mock_publish):
   assert "Publish failed" in result["error_details"]
   mock_get_publisher_client.assert_called_once()
   mock_publisher_client.publish.assert_called_once()
+
+
+@mock.patch.dict(os.environ, {}, clear=True)
+@mock.patch.object(pubsub_client_lib, "get_subscriber_client", autospec=True)
+def test_pull_messages(mock_get_subscriber_client):
+  """Test pull_messages tool invocation."""
+  subscription_name = "projects/my_project_id/subscriptions/my_sub"
+  mock_credentials = mock.create_autospec(Credentials, instance=True)
+  tool_settings = PubSubToolConfig(project_id="my_project_id")
+
+  mock_subscriber_client = mock.create_autospec(
+      pubsub_v1.SubscriberClient, instance=True
+  )
+  mock_get_subscriber_client.return_value = mock_subscriber_client
+
+  mock_response = mock.Mock()
+  mock_message = mock.Mock()
+  mock_message.message.message_id = "123"
+  mock_message.message.data = b"Hello"
+  mock_message.message.attributes = {"key": "value"}
+  mock_message.message.publish_time = "2023-01-01T00:00:00Z"
+  mock_message.ack_id = "ack_123"
+  mock_response.received_messages = [mock_message]
+  mock_subscriber_client.pull.return_value = mock_response
+
+  result = message_tool.pull_messages(
+      subscription_name, mock_credentials, tool_settings
+  )
+
+  assert len(result["messages"]) == 1
+  assert result["messages"][0]["message_id"] == "123"
+  assert result["messages"][0]["data"] == "Hello"
+  assert result["messages"][0]["attributes"] == {"key": "value"}
+  assert result["messages"][0]["ack_id"] == "ack_123"
+
+  mock_get_subscriber_client.assert_called_once()
+  mock_subscriber_client.pull.assert_called_once_with(
+      subscription=subscription_name, max_messages=1
+  )
+  mock_subscriber_client.acknowledge.assert_not_called()
+
+
+@mock.patch.dict(os.environ, {}, clear=True)
+@mock.patch.object(pubsub_client_lib, "get_subscriber_client", autospec=True)
+def test_pull_messages_auto_ack(mock_get_subscriber_client):
+  """Test pull_messages tool invocation with auto_ack."""
+  subscription_name = "projects/my_project_id/subscriptions/my_sub"
+  mock_credentials = mock.create_autospec(Credentials, instance=True)
+  tool_settings = PubSubToolConfig(project_id="my_project_id")
+
+  mock_subscriber_client = mock.create_autospec(
+      pubsub_v1.SubscriberClient, instance=True
+  )
+  mock_get_subscriber_client.return_value = mock_subscriber_client
+
+  mock_response = mock.Mock()
+  mock_message = mock.Mock()
+  mock_message.message.message_id = "123"
+  mock_message.message.data = b"Hello"
+  mock_message.message.attributes = {}
+  mock_message.message.publish_time = "2023-01-01T00:00:00Z"
+  mock_message.ack_id = "ack_123"
+  mock_response.received_messages = [mock_message]
+  mock_subscriber_client.pull.return_value = mock_response
+
+  result = message_tool.pull_messages(
+      subscription_name,
+      mock_credentials,
+      tool_settings,
+      max_messages=5,
+      auto_ack=True,
+  )
+
+  assert len(result["messages"]) == 1
+  mock_get_subscriber_client.assert_called_once()
+  mock_subscriber_client.pull.assert_called_once_with(
+      subscription=subscription_name, max_messages=5
+  )
+  mock_subscriber_client.acknowledge.assert_called_once_with(
+      subscription=subscription_name, ack_ids=["ack_123"]
+  )
+
+
+@mock.patch.dict(os.environ, {}, clear=True)
+@mock.patch.object(pubsub_client_lib, "get_subscriber_client", autospec=True)
+def test_pull_messages_exception(mock_get_subscriber_client):
+  """Test pull_messages tool invocation when exception occurs."""
+  subscription_name = "projects/my_project_id/subscriptions/my_sub"
+  mock_credentials = mock.create_autospec(Credentials, instance=True)
+  tool_settings = PubSubToolConfig(project_id="my_project_id")
+
+  mock_subscriber_client = mock.create_autospec(
+      pubsub_v1.SubscriberClient, instance=True
+  )
+  mock_get_subscriber_client.return_value = mock_subscriber_client
+
+  mock_subscriber_client.pull.side_effect = Exception("Pull failed")
+
+  result = message_tool.pull_messages(
+      subscription_name, mock_credentials, tool_settings
+  )
+
+  assert result["status"] == "ERROR"
+  assert "Pull failed" in result["error_details"]
+
+
+@mock.patch.dict(os.environ, {}, clear=True)
+@mock.patch.object(pubsub_client_lib, "get_subscriber_client", autospec=True)
+def test_acknowledge_messages(mock_get_subscriber_client):
+  """Test acknowledge_messages tool invocation."""
+  subscription_name = "projects/my_project_id/subscriptions/my_sub"
+  ack_ids = ["ack1", "ack2"]
+  mock_credentials = mock.create_autospec(Credentials, instance=True)
+  tool_settings = PubSubToolConfig(project_id="my_project_id")
+
+  mock_subscriber_client = mock.create_autospec(
+      pubsub_v1.SubscriberClient, instance=True
+  )
+  mock_get_subscriber_client.return_value = mock_subscriber_client
+
+  result = message_tool.acknowledge_messages(
+      subscription_name, ack_ids, mock_credentials, tool_settings
+  )
+
+  assert result["status"] == "SUCCESS"
+  mock_get_subscriber_client.assert_called_once()
+  mock_subscriber_client.acknowledge.assert_called_once_with(
+      subscription=subscription_name, ack_ids=ack_ids
+  )
+
+
+@mock.patch.dict(os.environ, {}, clear=True)
+@mock.patch.object(pubsub_client_lib, "get_subscriber_client", autospec=True)
+def test_acknowledge_messages_exception(mock_get_subscriber_client):
+  """Test acknowledge_messages tool invocation when exception occurs."""
+  subscription_name = "projects/my_project_id/subscriptions/my_sub"
+  ack_ids = ["ack1"]
+  mock_credentials = mock.create_autospec(Credentials, instance=True)
+  tool_settings = PubSubToolConfig(project_id="my_project_id")
+
+  mock_subscriber_client = mock.create_autospec(
+      pubsub_v1.SubscriberClient, instance=True
+  )
+  mock_get_subscriber_client.return_value = mock_subscriber_client
+
+  mock_subscriber_client.acknowledge.side_effect = Exception("Ack failed")
+
+  result = message_tool.acknowledge_messages(
+      subscription_name, ack_ids, mock_credentials, tool_settings
+  )
+
+  assert result["status"] == "ERROR"
+  assert "Ack failed" in result["error_details"]

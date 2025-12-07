@@ -12,6 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Pub/Sub Tools (Experimental).
+
+Pub/Sub Tools under this module are hand crafted and customized while the tools
+under google.adk.tools.google_api_tool are auto generated based on API
+definition. The rationales to have customized tool are:
+
+1. Better handling of base64 encoding for published messages.
+2. A richer subscribe-side API that reflects how users may want to pull/ack
+   messages.
+"""
+
 from .pubsub_credentials import PubSubCredentialsConfig
 from .pubsub_toolset import PubSubToolset
 

@@ -68,13 +68,12 @@ root_agent = LlmAgent(
     model="gemini-2.0-flash",
     name=PUBSUB_AGENT_NAME,
     description=(
-        "Agent to answer questions about Pub/Sub topics, subscriptions, and"
-        " schemas, and publish messages."
+        "Agent to publish, pull, and acknowledge messages from Google Cloud"
+        " Pub/Sub."
     ),
     instruction="""\
         You are a cloud engineer agent with access to Google Cloud Pub/Sub tools.
-        Make use of those tools to answer the user's questions about topics, subscriptions, and schemas.
-        You can also publish messages to topics if requested.
+        You can publish messages to topics, pull messages from subscriptions, and acknowledge messages.
     """,
     tools=[pubsub_toolset],
 )

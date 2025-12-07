@@ -89,35 +89,3 @@ def get_subscriber_client(
   )
 
   return subscriber_client
-
-
-def get_schema_client(
-    *,
-    credentials: Credentials,
-    user_agent: Optional[Union[str, List[str]]] = None,
-) -> pubsub_v1.SchemaServiceClient:
-  """Get a Pub/Sub Schema Service client.
-
-  Args:
-    credentials: The credentials to use for the request.
-    user_agent: The user agent to use for the request.
-
-  Returns:
-    A Pub/Sub Schema Service client.
-  """
-
-  user_agents = [USER_AGENT]
-  if user_agent:
-    if isinstance(user_agent, str):
-      user_agents.append(user_agent)
-    else:
-      user_agents.extend([ua for ua in user_agent if ua])
-
-  client_info = ClientInfo(user_agent=" ".join(user_agents))
-
-  schema_client = pubsub_v1.SchemaServiceClient(
-      credentials=credentials,
-      client_info=client_info,
-  )
-
-  return schema_client

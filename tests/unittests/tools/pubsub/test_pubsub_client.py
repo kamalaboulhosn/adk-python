@@ -30,6 +30,8 @@ def test_get_publisher_client(mock_publisher_client):
   assert kwargs["credentials"] == mock_creds
   assert "client_info" in kwargs
 
+  assert "client_info" in kwargs
+
 
 @mock.patch("google.cloud.pubsub_v1.SubscriberClient")
 def test_get_subscriber_client(mock_subscriber_client):
@@ -39,17 +41,5 @@ def test_get_subscriber_client(mock_subscriber_client):
 
   mock_subscriber_client.assert_called_once()
   _, kwargs = mock_subscriber_client.call_args
-  assert kwargs["credentials"] == mock_creds
-  assert "client_info" in kwargs
-
-
-@mock.patch("google.cloud.pubsub_v1.SchemaServiceClient")
-def test_get_schema_client(mock_schema_client):
-  """Test get_schema_client factory."""
-  mock_creds = mock.Mock(spec=Credentials)
-  client.get_schema_client(credentials=mock_creds)
-
-  mock_schema_client.assert_called_once()
-  _, kwargs = mock_schema_client.call_args
   assert kwargs["credentials"] == mock_creds
   assert "client_info" in kwargs

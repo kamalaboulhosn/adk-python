@@ -41,19 +41,13 @@ async def test_pubsub_toolset_tools_default():
   tools = await toolset.get_tools()
   assert tools is not None
 
-  assert len(tools) == 9
+  assert len(tools) == 3
   assert all([isinstance(tool, GoogleTool) for tool in tools])
 
   expected_tool_names = set([
-      "list_topics",
-      "get_topic",
-      "list_subscriptions",
-      "get_subscription",
-      "list_schemas",
-      "get_schema",
-      "list_schema_revisions",
-      "get_schema_revision",
       "publish_message",
+      "pull_messages",
+      "acknowledge_messages",
   ])
   actual_tool_names = set([tool.name for tool in tools])
   assert actual_tool_names == expected_tool_names
@@ -63,12 +57,9 @@ async def test_pubsub_toolset_tools_default():
     "selected_tools",
     [
         pytest.param([], id="None"),
-        pytest.param(["list_topics", "get_topic"], id="topic-metadata"),
-        pytest.param(
-            ["list_subscriptions", "get_subscription"],
-            id="subscription-metadata",
-        ),
         pytest.param(["publish_message"], id="publish"),
+        pytest.param(["pull_messages"], id="pull"),
+        pytest.param(["acknowledge_messages"], id="ack"),
     ],
 )
 @pytest.mark.asyncio

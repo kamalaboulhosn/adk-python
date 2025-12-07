@@ -5,41 +5,17 @@
 This sample agent demonstrates the Pub/Sub first-party tools in ADK,
 distributed via the `google.adk.tools.pubsub` module. These tools include:
 
-1. `list_topics`
-
-  Fetches Pub/Sub topics present in a GCP project.
-
-2. `get_topic`
-
-  Fetches metadata about a Pub/Sub topic.
-
-3. `list_subscriptions`
-
-  Fetches subscriptions present in a GCP project.
-
-4. `get_subscription`
-
-  Fetches metadata about a Pub/Sub subscription.
-
-5. `list_schemas`
-
-  Fetches schemas present in a GCP project.
-
-6. `get_schema`
-
-  Fetches metadata about a Pub/Sub schema.
-
-7. `list_schema_revisions`
-
-  Fetches revisions of a Pub/Sub schema.
-
-8. `get_schema_revision`
-
-  Fetches metadata about a specific Pub/Sub schema revision.
-
-9. `publish_message`
+1. `publish_message`
 
   Publishes a message to a Pub/Sub topic.
+
+2. `pull_messages`
+
+  Pulls messages from a Pub/Sub subscription.
+
+3. `acknowledge_messages`
+
+  Acknowledges messages on a Pub/Sub subscription.
 
 ## How to use
 
@@ -107,7 +83,6 @@ type.
 
 ## Sample prompts
 
-* list topics in my project
-* show details for topic 'my-topic'
-* list subscriptions
 * publish 'Hello World' to 'my-topic'
+* pull messages from 'my-subscription'
+* acknowledge message 'ack-id' from 'my-subscription'

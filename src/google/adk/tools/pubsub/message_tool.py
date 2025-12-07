@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+from typing import List
 from typing import Optional
 
 from google.auth.credentials import Credentials
@@ -56,6 +57,98 @@ def publish_message(
     message_id = future.result()
 
     return {"message_id": message_id}
+  except Exception as ex:
+    return {
+        "status": "ERROR",
+        "error_details": str(ex),
+    }
+
+
+def pull_messages(
+    subscription_name: str,
+    credentials: Credentials,
+    settings: PubSubToolConfig,
+    max_messages: int = 1,
+    auto_ack: bool = False,
+) -> dict:
+  """Pull messages from a Pub/Sub subscription.
+
+  Args:
+      subscription_name (str): The Pub/Sub subscription name (e.g. projects/my-project/subscriptions/my-sub).
+      credentials (Credentials): The credentials to use for the request.
+      settings (PubSubToolConfig): The Pub/Sub tool settings.
+      max_messages (int): The maximum number of messages to pull. Defaults to 1.
+      auto_ack (bool): Whether to automatically acknowledge the messages. Defaults to False.
+
+  Returns:
+      dict: Dictionary with the list of pulled messages.
+  """
+  try:
+    subscriber_client = client.get_subscriber_client(
+        credentials=credentials,
+        user_agent=[settings.project_id, "pull_messages"],
+    )
+
+    response = subscriber_client.pull(
+        subscription=subscription_name,
+        max_messages=max_messages,
+    )
+
+    messages = []
+    ack_ids = []
+    for received_message in response.received_messages:
+      messages.append({
+          "message_id": received_message.message.message_id,
+          "data": received_message.message.data.decode("utf-8"),
+          "attributes": dict(received_message.message.attributes),
+          "publish_time": str(received_message.message.publish_time),
+          "ack_id": received_message.ack_id,
+      })
+      ack_ids.append(received_message.ack_id)
+
+    if auto_ack and ack_ids:
+      subscriber_client.acknowledge(
+          subscription=subscription_name,
+          ack_ids=ack_ids,
+      )
+
+    return {"messages": messages}
+  except Exception as ex:
+    return {
+        "status": "ERROR",
+        "error_details": str(ex),
+    }
+
+
+def acknowledge_messages(
+    subscription_name: str,
+    ack_ids: List[str],
+    credentials: Credentials,
+    settings: PubSubToolConfig,
+) -> dict:
+  """Acknowledge messages on a Pub/Sub subscription.
+
+  Args:
+      subscription_name (str): The Pub/Sub subscription name (e.g. projects/my-project/subscriptions/my-sub).
+      ack_ids (List[str]): List of acknowledgment IDs to acknowledge.
+      credentials (Credentials): The credentials to use for the request.
+      settings (PubSubToolConfig): The Pub/Sub tool settings.
+
+  Returns:
+      dict: Status of the operation.
+  """
+  try:
+    subscriber_client = client.get_subscriber_client(
+        credentials=credentials,
+        user_agent=[settings.project_id, "acknowledge_messages"],
+    )
+
+    subscriber_client.acknowledge(
+        subscription=subscription_name,
+        ack_ids=ack_ids,
+    )
+
+    return {"status": "SUCCESS"}
   except Exception as ex:
     return {
         "status": "ERROR",

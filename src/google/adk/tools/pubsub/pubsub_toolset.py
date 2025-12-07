@@ -22,7 +22,6 @@ from google.adk.agents.readonly_context import ReadonlyContext
 from typing_extensions import override
 
 from . import message_tool
-from . import metadata_tool
 from ...tools.base_tool import BaseTool
 from ...tools.base_toolset import BaseToolset
 from ...tools.base_toolset import ToolPredicate
@@ -75,15 +74,9 @@ class PubSubToolset(BaseToolset):
             tool_settings=self._tool_settings,
         )
         for func in [
-            metadata_tool.list_topics,
-            metadata_tool.get_topic,
-            metadata_tool.list_subscriptions,
-            metadata_tool.get_subscription,
-            metadata_tool.list_schemas,
-            metadata_tool.get_schema,
-            metadata_tool.list_schema_revisions,
-            metadata_tool.get_schema_revision,
             message_tool.publish_message,
+            message_tool.pull_messages,
+            message_tool.acknowledge_messages,
         ]
     ]
 
