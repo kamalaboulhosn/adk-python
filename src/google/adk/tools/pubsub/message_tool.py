@@ -109,9 +109,7 @@ def pull_messages(
           "message_id": received_message.message.message_id,
           "data": received_message.message.data.decode("utf-8"),
           "attributes": dict(received_message.message.attributes),
-          "publish_time": (
-              received_message.message.publish_time.ToDatetime().isoformat()
-          ),
+          "publish_time": received_message.message.publish_time.rfc3339(),
           "ack_id": received_message.ack_id,
       })
       ack_ids.append(received_message.ack_id)

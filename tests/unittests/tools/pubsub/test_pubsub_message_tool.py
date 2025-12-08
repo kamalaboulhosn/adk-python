@@ -183,7 +183,9 @@ def test_pull_messages(mock_get_subscriber_client):
   mock_message.message.message_id = "123"
   mock_message.message.data = b"Hello"
   mock_message.message.attributes = {"key": "value"}
-  mock_message.message.publish_time = "2023-01-01T00:00:00Z"
+  mock_publish_time = mock.Mock()
+  mock_publish_time.rfc3339.return_value = "2023-01-01T00:00:00Z"
+  mock_message.message.publish_time = mock_publish_time
   mock_message.ack_id = "ack_123"
   mock_response.received_messages = [mock_message]
   mock_subscriber_client.pull.return_value = mock_response
@@ -223,7 +225,9 @@ def test_pull_messages_auto_ack(mock_get_subscriber_client):
   mock_message.message.message_id = "123"
   mock_message.message.data = b"Hello"
   mock_message.message.attributes = {}
-  mock_message.message.publish_time = "2023-01-01T00:00:00Z"
+  mock_publish_time = mock.Mock()
+  mock_publish_time.rfc3339.return_value = "2023-01-01T00:00:00Z"
+  mock_message.message.publish_time = mock_publish_time
   mock_message.ack_id = "ack_123"
   mock_response.received_messages = [mock_message]
   mock_subscriber_client.pull.return_value = mock_response
