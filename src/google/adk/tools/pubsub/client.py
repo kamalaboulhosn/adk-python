@@ -21,6 +21,7 @@ from typing import Union
 from google.api_core.gapic_v1.client_info import ClientInfo
 from google.auth.credentials import Credentials
 from google.cloud import pubsub_v1
+from google.cloud.pubsub_v1.types import BatchSettings
 
 from ... import version
 
@@ -52,11 +53,6 @@ def get_publisher_client(
   global _publisher_client_cache
   current_time = time.time()
 
-  # Clean up expired entries
-  _publisher_client_cache = {
-      k: v for k, v in _publisher_client_cache.items() if v[1] > current_time
-  }
-
   user_agents_key = None
   if user_agent:
     if isinstance(user_agent, str):
@@ -81,10 +77,14 @@ def get_publisher_client(
 
   client_info = ClientInfo(user_agent=" ".join(user_agents))
 
+  # Since we syncrhonously publish messages, we want to disable batching to
+  # remove any delay.
+  custom_batch_settings = BatchSettings(max_messages=1)
   publisher_client = pubsub_v1.PublisherClient(
       credentials=credentials,
       client_info=client_info,
       publisher_options=publisher_options,
+      batch_settings=custom_batch_settings,
   )
 
   _publisher_client_cache[key] = (publisher_client, current_time + _CACHE_TTL)
@@ -111,11 +111,6 @@ def get_subscriber_client(
   """
   global _subscriber_client_cache
   current_time = time.time()
-
-  # Clean up expired entries
-  _subscriber_client_cache = {
-      k: v for k, v in _subscriber_client_cache.items() if v[1] > current_time
-  }
 
   user_agents_key = None
   if user_agent:

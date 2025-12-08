@@ -29,8 +29,8 @@ def publish_message(
     message: str,
     credentials: Credentials,
     settings: PubSubToolConfig,
-    attributes: Optional[dict[str, str]] = None,
-    ordering_key: Optional[str] = None,
+    attributes: Optional[dict[str, str]] = {},
+    ordering_key: Optional[str] = "",
 ) -> dict:
   """Publish a message to a Pub/Sub topic.
 
@@ -46,14 +46,12 @@ def publish_message(
       dict: Dictionary with the message_id of the published message.
   """
   try:
-    publisher_options = None
-    publish_kwargs = attributes or {}
     if ordering_key:
-      publish_kwargs["ordering_key"] = ordering_key
       publisher_options = pubsub_v1.types.PublisherOptions(
           enable_message_ordering=True
       )
-
+    else:
+      publisher_options = pubsub_v1.types.PublisherOptions()
     publisher_client = client.get_publisher_client(
         credentials=credentials,
         user_agent=[settings.project_id, "publish_message"],
@@ -61,7 +59,9 @@ def publish_message(
     )
 
     data = message.encode("utf-8")
-    future = publisher_client.publish(topic_name, data, **publish_kwargs)
+    future = publisher_client.publish(
+        topic_name, data=data, ordering_key=ordering_key, **attributes
+    )
     message_id = future.result()
 
     return {"message_id": message_id}
