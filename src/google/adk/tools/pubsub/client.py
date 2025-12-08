@@ -27,20 +27,50 @@ from ... import version
 USER_AGENT = f"adk-pubsub-tool google-adk/{version.__version__}"
 
 
+import time
+
+_publisher_client_cache = {}
+_CACHE_TTL = 1800  # 30 minutes
+
+
 def get_publisher_client(
     *,
     credentials: Credentials,
     user_agent: Optional[Union[str, List[str]]] = None,
+    publisher_options: Optional[pubsub_v1.types.PublisherOptions] = None,
 ) -> pubsub_v1.PublisherClient:
   """Get a Pub/Sub Publisher client.
 
   Args:
     credentials: The credentials to use for the request.
     user_agent: The user agent to use for the request.
+    publisher_options: The publisher options to use for the request.
 
   Returns:
     A Pub/Sub Publisher client.
   """
+  global _publisher_client_cache
+  current_time = time.time()
+
+  # Clean up expired entries
+  _publisher_client_cache = {
+      k: v for k, v in _publisher_client_cache.items() if v[1] > current_time
+  }
+
+  user_agents_key = None
+  if user_agent:
+    if isinstance(user_agent, str):
+      user_agents_key = (user_agent,)
+    else:
+      user_agents_key = tuple(user_agent)
+
+  # Use object identity for credentials and publisher_options as they might not be hashable by value
+  key = (credentials, user_agents_key, publisher_options)
+
+  if key in _publisher_client_cache:
+    client, expiration = _publisher_client_cache[key]
+    if expiration > current_time:
+      return client
 
   user_agents = [USER_AGENT]
   if user_agent:
@@ -54,9 +84,15 @@ def get_publisher_client(
   publisher_client = pubsub_v1.PublisherClient(
       credentials=credentials,
       client_info=client_info,
+      publisher_options=publisher_options,
   )
 
+  _publisher_client_cache[key] = (publisher_client, current_time + _CACHE_TTL)
+
   return publisher_client
+
+
+_subscriber_client_cache = {}
 
 
 def get_subscriber_client(
@@ -73,6 +109,28 @@ def get_subscriber_client(
   Returns:
     A Pub/Sub Subscriber client.
   """
+  global _subscriber_client_cache
+  current_time = time.time()
+
+  # Clean up expired entries
+  _subscriber_client_cache = {
+      k: v for k, v in _subscriber_client_cache.items() if v[1] > current_time
+  }
+
+  user_agents_key = None
+  if user_agent:
+    if isinstance(user_agent, str):
+      user_agents_key = (user_agent,)
+    else:
+      user_agents_key = tuple(user_agent)
+
+  # Use object identity for credentials as they might not be hashable by value
+  key = (credentials, user_agents_key)
+
+  if key in _subscriber_client_cache:
+    client, expiration = _subscriber_client_cache[key]
+    if expiration > current_time:
+      return client
 
   user_agents = [USER_AGENT]
   if user_agent:
@@ -87,5 +145,7 @@ def get_subscriber_client(
       credentials=credentials,
       client_info=client_info,
   )
+
+  _subscriber_client_cache[key] = (subscriber_client, current_time + _CACHE_TTL)
 
   return subscriber_client

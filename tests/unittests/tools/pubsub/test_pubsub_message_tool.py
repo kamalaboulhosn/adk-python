@@ -84,6 +84,9 @@ def test_publish_message_with_ordering_key(
 
   assert result["message_id"] == "message_id"
   mock_get_publisher_client.assert_called_once()
+  _, kwargs = mock_get_publisher_client.call_args
+  assert kwargs["publisher_options"].enable_message_ordering is True
+
   mock_publisher_client.publish.assert_called_once()
 
   # Verify ordering_key was passed

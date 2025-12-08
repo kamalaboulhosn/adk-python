@@ -18,6 +18,7 @@ from typing import List
 from typing import Optional
 
 from google.auth.credentials import Credentials
+from google.cloud import pubsub_v1
 
 from . import client
 from .config import PubSubToolConfig
@@ -45,15 +46,22 @@ def publish_message(
       dict: Dictionary with the message_id of the published message.
   """
   try:
+    publisher_options = None
+    publish_kwargs = attributes or {}
+    if ordering_key:
+      publish_kwargs["ordering_key"] = ordering_key
+      publisher_options = pubsub_v1.types.PublisherOptions(
+          enable_message_ordering=True
+      )
+
     publisher_client = client.get_publisher_client(
         credentials=credentials,
         user_agent=[settings.project_id, "publish_message"],
+        publisher_options=publisher_options,
     )
 
     data = message.encode("utf-8")
-    future = publisher_client.publish(
-        topic_name, data, ordering_key=ordering_key, **(attributes or {})
-    )
+    future = publisher_client.publish(topic_name, data, **publish_kwargs)
     message_id = future.result()
 
     return {"message_id": message_id}

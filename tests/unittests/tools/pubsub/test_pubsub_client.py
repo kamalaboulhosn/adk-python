@@ -30,7 +30,45 @@ def test_get_publisher_client(mock_publisher_client):
   assert kwargs["credentials"] == mock_creds
   assert "client_info" in kwargs
 
+
+@mock.patch("google.cloud.pubsub_v1.PublisherClient")
+def test_get_publisher_client_with_options(mock_publisher_client):
+  """Test get_publisher_client factory with options."""
+  mock_creds = mock.Mock(spec=Credentials)
+  mock_options = mock.Mock(spec=pubsub_v1.types.PublisherOptions)
+  client.get_publisher_client(
+      credentials=mock_creds, publisher_options=mock_options
+  )
+
+  mock_publisher_client.assert_called_once()
+  _, kwargs = mock_publisher_client.call_args
+  assert kwargs["credentials"] == mock_creds
+  assert kwargs["publisher_options"] == mock_options
   assert "client_info" in kwargs
+
+
+@mock.patch("google.cloud.pubsub_v1.PublisherClient")
+def test_get_publisher_client_caching(mock_publisher_client):
+  """Test get_publisher_client caching behavior."""
+  # Configure mock to return different instances
+  mock_publisher_client.side_effect = [mock.Mock(), mock.Mock()]
+
+  mock_creds = mock.Mock(spec=Credentials)
+
+  # First call - should create client
+  client1 = client.get_publisher_client(credentials=mock_creds)
+  mock_publisher_client.assert_called_once()
+
+  # Second call with same args - should return cached client
+  client2 = client.get_publisher_client(credentials=mock_creds)
+  assert client1 is client2
+  mock_publisher_client.assert_called_once()  # Still called only once
+
+  # Call with different args - should create new client
+  mock_creds2 = mock.Mock(spec=Credentials)
+  client3 = client.get_publisher_client(credentials=mock_creds2)
+  assert client3 is not client1
+  assert mock_publisher_client.call_count == 2
 
 
 @mock.patch("google.cloud.pubsub_v1.SubscriberClient")
@@ -43,3 +81,27 @@ def test_get_subscriber_client(mock_subscriber_client):
   _, kwargs = mock_subscriber_client.call_args
   assert kwargs["credentials"] == mock_creds
   assert "client_info" in kwargs
+
+
+@mock.patch("google.cloud.pubsub_v1.SubscriberClient")
+def test_get_subscriber_client_caching(mock_subscriber_client):
+  """Test get_subscriber_client caching behavior."""
+  # Configure mock to return different instances
+  mock_subscriber_client.side_effect = [mock.Mock(), mock.Mock()]
+
+  mock_creds = mock.Mock(spec=Credentials)
+
+  # First call - should create client
+  client1 = client.get_subscriber_client(credentials=mock_creds)
+  mock_subscriber_client.assert_called_once()
+
+  # Second call with same args - should return cached client
+  client2 = client.get_subscriber_client(credentials=mock_creds)
+  assert client1 is client2
+  mock_subscriber_client.assert_called_once()  # Still called only once
+
+  # Call with different args - should create new client
+  mock_creds2 = mock.Mock(spec=Credentials)
+  client3 = client.get_subscriber_client(credentials=mock_creds2)
+  assert client3 is not client1
+  assert mock_subscriber_client.call_count == 2
