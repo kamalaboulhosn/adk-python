@@ -28,9 +28,11 @@ from ... import version
 USER_AGENT = f"adk-pubsub-tool google-adk/{version.__version__}"
 
 
+import threading
 import time
 
 _publisher_client_cache = {}
+_publisher_client_lock = threading.Lock()
 _CACHE_TTL = 1800  # 30 minutes
 
 
@@ -63,36 +65,38 @@ def get_publisher_client(
   # Use object identity for credentials and publisher_options as they might not be hashable by value
   key = (credentials, user_agents_key, publisher_options)
 
-  if key in _publisher_client_cache:
-    client, expiration = _publisher_client_cache[key]
-    if expiration > current_time:
-      return client
+  with _publisher_client_lock:
+    if key in _publisher_client_cache:
+      client, expiration = _publisher_client_cache[key]
+      if expiration > current_time:
+        return client
 
-  user_agents = [USER_AGENT]
-  if user_agent:
-    if isinstance(user_agent, str):
-      user_agents.append(user_agent)
-    else:
-      user_agents.extend([ua for ua in user_agent if ua])
+    user_agents = [USER_AGENT]
+    if user_agent:
+      if isinstance(user_agent, str):
+        user_agents.append(user_agent)
+      else:
+        user_agents.extend([ua for ua in user_agent if ua])
 
-  client_info = ClientInfo(user_agent=" ".join(user_agents))
+    client_info = ClientInfo(user_agent=" ".join(user_agents))
 
-  # Since we syncrhonously publish messages, we want to disable batching to
-  # remove any delay.
-  custom_batch_settings = BatchSettings(max_messages=1)
-  publisher_client = pubsub_v1.PublisherClient(
-      credentials=credentials,
-      client_info=client_info,
-      publisher_options=publisher_options,
-      batch_settings=custom_batch_settings,
-  )
+    # Since we syncrhonously publish messages, we want to disable batching to
+    # remove any delay.
+    custom_batch_settings = BatchSettings(max_messages=1)
+    publisher_client = pubsub_v1.PublisherClient(
+        credentials=credentials,
+        client_info=client_info,
+        publisher_options=publisher_options,
+        batch_settings=custom_batch_settings,
+    )
 
-  _publisher_client_cache[key] = (publisher_client, current_time + _CACHE_TTL)
+    _publisher_client_cache[key] = (publisher_client, current_time + _CACHE_TTL)
 
-  return publisher_client
+    return publisher_client
 
 
 _subscriber_client_cache = {}
+_subscriber_client_lock = threading.Lock()
 
 
 def get_subscriber_client(
@@ -122,25 +126,29 @@ def get_subscriber_client(
   # Use object identity for credentials as they might not be hashable by value
   key = (credentials, user_agents_key)
 
-  if key in _subscriber_client_cache:
-    client, expiration = _subscriber_client_cache[key]
-    if expiration > current_time:
-      return client
+  with _subscriber_client_lock:
+    if key in _subscriber_client_cache:
+      client, expiration = _subscriber_client_cache[key]
+      if expiration > current_time:
+        return client
 
-  user_agents = [USER_AGENT]
-  if user_agent:
-    if isinstance(user_agent, str):
-      user_agents.append(user_agent)
-    else:
-      user_agents.extend([ua for ua in user_agent if ua])
+    user_agents = [USER_AGENT]
+    if user_agent:
+      if isinstance(user_agent, str):
+        user_agents.append(user_agent)
+      else:
+        user_agents.extend([ua for ua in user_agent if ua])
 
-  client_info = ClientInfo(user_agent=" ".join(user_agents))
+    client_info = ClientInfo(user_agent=" ".join(user_agents))
 
-  subscriber_client = pubsub_v1.SubscriberClient(
-      credentials=credentials,
-      client_info=client_info,
-  )
+    subscriber_client = pubsub_v1.SubscriberClient(
+        credentials=credentials,
+        client_info=client_info,
+    )
 
-  _subscriber_client_cache[key] = (subscriber_client, current_time + _CACHE_TTL)
+    _subscriber_client_cache[key] = (
+        subscriber_client,
+        current_time + _CACHE_TTL,
+    )
 
-  return subscriber_client
+    return subscriber_client
