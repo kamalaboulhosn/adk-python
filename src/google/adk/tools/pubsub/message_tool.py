@@ -40,8 +40,8 @@ def publish_message(
       message (str): The message content to publish.
       credentials (Credentials): The credentials to use for the request.
       settings (PubSubToolConfig): The Pub/Sub tool settings.
-      attributes (Optional[dict[str, str]]): Attributes to attach to the message.
-      ordering_key (str): Ordering key for the message.
+      attributes (Optional[dict[str, str]]): Optional attributes to attach to the message.
+      ordering_key (Optional[str]): Optional ordering key for the message.
 
   Returns:
       dict: Dictionary with the message_id of the published message.
