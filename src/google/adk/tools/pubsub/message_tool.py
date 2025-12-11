@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import base64
 from typing import List
 from typing import Optional
 
@@ -29,8 +30,8 @@ def publish_message(
     message: str,
     credentials: Credentials,
     settings: PubSubToolConfig,
-    attributes: Optional[dict[str, str]] = {},
-    ordering_key: Optional[str] = "",
+    attributes: Optional[dict[str, str]] = None,
+    ordering_key: Optional[str] = None,
 ) -> dict:
   """Publish a message to a Pub/Sub topic.
 
@@ -39,8 +40,8 @@ def publish_message(
       message (str): The message content to publish.
       credentials (Credentials): The credentials to use for the request.
       settings (PubSubToolConfig): The Pub/Sub tool settings.
-      attributes (Optional[dict[str, str]]): Optional attributes to attach to the message.
-      ordering_key (Optional[str]): Optional ordering key for the message.
+      attributes (Optional[dict[str, str]]): Attributes to attach to the message.
+      ordering_key (str): Ordering key for the message.
 
   Returns:
       dict: Dictionary with the message_id of the published message.
@@ -58,9 +59,13 @@ def publish_message(
         publisher_options=publisher_options,
     )
 
-    data = message.encode("utf-8")
+    message_bytes = message.encode("utf-8")
+
     future = publisher_client.publish(
-        topic_name, data=data, ordering_key=ordering_key, **attributes
+        topic_name,
+        data=message_bytes,
+        ordering_key=ordering_key or "",
+        **(attributes or {}),
     )
     message_id = future.result()
 
@@ -107,9 +112,18 @@ def pull_messages(
     messages = []
     ack_ids = []
     for received_message in response.received_messages:
+      # Try to decode as UTF-8, fall back to base64 for binary data
+      try:
+        message_data = received_message.message.data.decode("utf-8")
+      except UnicodeDecodeError:
+        # If UTF-8 decoding fails, encode as base64 string
+        message_data = base64.b64encode(received_message.message.data).decode(
+            "ascii"
+        )
+
       messages.append({
           "message_id": received_message.message.message_id,
-          "data": received_message.message.data.decode("utf-8"),
+          "data": message_data,
           "attributes": dict(received_message.message.attributes),
           "publish_time": received_message.message.publish_time.rfc3339(),
           "ack_id": received_message.ack_id,

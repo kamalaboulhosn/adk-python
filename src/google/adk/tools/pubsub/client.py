@@ -62,8 +62,8 @@ def get_publisher_client(
     else:
       user_agents_key = tuple(user_agent)
 
-  # Use object identity for credentials and publisher_options as they might not be hashable by value
-  key = (credentials, user_agents_key, publisher_options)
+  # Use object identity for credentials and publisher_options as they are not hashable
+  key = (id(credentials), user_agents_key, id(publisher_options))
 
   with _publisher_client_lock:
     if key in _publisher_client_cache:
@@ -123,8 +123,8 @@ def get_subscriber_client(
     else:
       user_agents_key = tuple(user_agent)
 
-  # Use object identity for credentials as they might not be hashable by value
-  key = (credentials, user_agents_key)
+  # Use object identity for credentials as they are not hashable
+  key = (id(credentials), user_agents_key)
 
   with _subscriber_client_lock:
     if key in _subscriber_client_cache:

@@ -17,6 +17,19 @@ from unittest import mock
 from google.adk.tools.pubsub import client
 from google.cloud import pubsub_v1
 from google.oauth2.credentials import Credentials
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def cleanup_pubsub_clients():
+  """Automatically clean up Pub/Sub client caches after each test.
+
+  This fixture runs automatically for all tests in this file,
+  ensuring that client caches are cleared between tests to prevent
+  state leakage and ensure test isolation.
+  """
+  yield
+  client.cleanup_clients()
 
 
 @mock.patch("google.cloud.pubsub_v1.PublisherClient")
@@ -29,6 +42,8 @@ def test_get_publisher_client(mock_publisher_client):
   _, kwargs = mock_publisher_client.call_args
   assert kwargs["credentials"] == mock_creds
   assert "client_info" in kwargs
+  assert isinstance(kwargs["batch_settings"], pubsub_v1.types.BatchSettings)
+  assert kwargs["batch_settings"].max_messages == 1
 
 
 @mock.patch("google.cloud.pubsub_v1.PublisherClient")
@@ -45,6 +60,8 @@ def test_get_publisher_client_with_options(mock_publisher_client):
   assert kwargs["credentials"] == mock_creds
   assert kwargs["publisher_options"] == mock_options
   assert "client_info" in kwargs
+  assert isinstance(kwargs["batch_settings"], pubsub_v1.types.BatchSettings)
+  assert kwargs["batch_settings"].max_messages == 1
 
 
 @mock.patch("google.cloud.pubsub_v1.PublisherClient")
