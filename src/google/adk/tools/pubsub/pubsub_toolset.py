@@ -21,6 +21,7 @@ from typing import Union
 from google.adk.agents.readonly_context import ReadonlyContext
 from typing_extensions import override
 
+from . import client
 from . import message_tool
 from ...tools.base_tool import BaseTool
 from ...tools.base_toolset import BaseToolset
@@ -88,4 +89,5 @@ class PubSubToolset(BaseToolset):
 
   @override
   async def close(self):
-    pass
+    """Clean up resources used by the toolset."""
+    client.cleanup_clients()

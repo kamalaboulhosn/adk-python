@@ -68,7 +68,9 @@ def publish_message(
   except Exception as ex:
     return {
         "status": "ERROR",
-        "error_details": str(ex),
+        "error_details": (
+            f"Failed to publish message to topic '{topic_name}': {repr(ex)}"
+        ),
     }
 
 
@@ -124,7 +126,10 @@ def pull_messages(
   except Exception as ex:
     return {
         "status": "ERROR",
-        "error_details": str(ex),
+        "error_details": (
+            f"Failed to pull messages from subscription '{subscription_name}':"
+            f" {repr(ex)}"
+        ),
     }
 
 
@@ -160,5 +165,8 @@ def acknowledge_messages(
   except Exception as ex:
     return {
         "status": "ERROR",
-        "error_details": str(ex),
+        "error_details": (
+            "Failed to acknowledge messages on subscription"
+            f" '{subscription_name}': {repr(ex)}"
+        ),
     }

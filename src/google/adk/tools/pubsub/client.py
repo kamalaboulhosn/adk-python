@@ -152,3 +152,14 @@ def get_subscriber_client(
     )
 
     return subscriber_client
+
+
+def cleanup_clients():
+  """Clean up all cached Pub/Sub clients."""
+  global _publisher_client_cache, _subscriber_client_cache
+
+  with _publisher_client_lock:
+    _publisher_client_cache.clear()
+
+  with _subscriber_client_lock:
+    _subscriber_client_cache.clear()
