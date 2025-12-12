@@ -20,8 +20,11 @@ from unittest import mock
 from google.adk.tools.pubsub import client as pubsub_client_lib
 from google.adk.tools.pubsub import message_tool
 from google.adk.tools.pubsub.config import PubSubToolConfig
+from google.api_core import future
 from google.cloud import pubsub_v1
+from google.cloud.pubsub_v1 import types
 from google.oauth2.credentials import Credentials
+from google.protobuf import timestamp_pb2
 
 
 @mock.patch.dict(os.environ, {}, clear=True)
@@ -39,7 +42,7 @@ def test_publish_message(mock_get_publisher_client, mock_publish):
   )
   mock_get_publisher_client.return_value = mock_publisher_client
 
-  mock_future = mock.Mock()
+  mock_future = mock.create_autospec(future.Future, instance=True)
   mock_future.result.return_value = "message_id"
   mock_publisher_client.publish.return_value = mock_future
 
@@ -70,7 +73,7 @@ def test_publish_message_with_ordering_key(
   )
   mock_get_publisher_client.return_value = mock_publisher_client
 
-  mock_future = mock.Mock()
+  mock_future = mock.create_autospec(future.Future, instance=True)
   mock_future.result.return_value = "message_id"
   mock_publisher_client.publish.return_value = mock_future
 
@@ -112,7 +115,7 @@ def test_publish_message_with_attributes(
   )
   mock_get_publisher_client.return_value = mock_publisher_client
 
-  mock_future = mock.Mock()
+  mock_future = mock.create_autospec(future.Future, instance=True)
   mock_future.result.return_value = "message_id"
   mock_publisher_client.publish.return_value = mock_future
 
@@ -178,12 +181,12 @@ def test_pull_messages(mock_get_subscriber_client):
   )
   mock_get_subscriber_client.return_value = mock_subscriber_client
 
-  mock_response = mock.Mock()
-  mock_message = mock.Mock()
+  mock_response = mock.create_autospec(types.PullResponse, instance=True)
+  mock_message = mock.MagicMock()
   mock_message.message.message_id = "123"
   mock_message.message.data = b"Hello"
   mock_message.message.attributes = {"key": "value"}
-  mock_publish_time = mock.Mock()
+  mock_publish_time = mock.MagicMock()
   mock_publish_time.rfc3339.return_value = "2023-01-01T00:00:00Z"
   mock_message.message.publish_time = mock_publish_time
   mock_message.ack_id = "ack_123"
@@ -194,11 +197,14 @@ def test_pull_messages(mock_get_subscriber_client):
       subscription_name, mock_credentials, tool_settings
   )
 
-  assert len(result["messages"]) == 1
-  assert result["messages"][0]["message_id"] == "123"
-  assert result["messages"][0]["data"] == "Hello"
-  assert result["messages"][0]["attributes"] == {"key": "value"}
-  assert result["messages"][0]["ack_id"] == "ack_123"
+  expected_message = {
+      "message_id": "123",
+      "data": "Hello",
+      "attributes": {"key": "value"},
+      "publish_time": "2023-01-01T00:00:00Z",
+      "ack_id": "ack_123",
+  }
+  assert result["messages"] == [expected_message]
 
   mock_get_subscriber_client.assert_called_once()
   mock_subscriber_client.pull.assert_called_once_with(
@@ -220,12 +226,12 @@ def test_pull_messages_auto_ack(mock_get_subscriber_client):
   )
   mock_get_subscriber_client.return_value = mock_subscriber_client
 
-  mock_response = mock.Mock()
-  mock_message = mock.Mock()
+  mock_response = mock.create_autospec(types.PullResponse, instance=True)
+  mock_message = mock.MagicMock()
   mock_message.message.message_id = "123"
   mock_message.message.data = b"Hello"
   mock_message.message.attributes = {}
-  mock_publish_time = mock.Mock()
+  mock_publish_time = mock.MagicMock()
   mock_publish_time.rfc3339.return_value = "2023-01-01T00:00:00Z"
   mock_message.message.publish_time = mock_publish_time
   mock_message.ack_id = "ack_123"

@@ -14,10 +14,6 @@
 
 from __future__ import annotations
 
-import base64
-from typing import List
-from typing import Optional
-
 from google.auth.credentials import Credentials
 from google.cloud import pubsub_v1
 
@@ -30,22 +26,26 @@ def publish_message(
     message: str,
     credentials: Credentials,
     settings: PubSubToolConfig,
-    attributes: Optional[dict[str, str]] = None,
-    ordering_key: Optional[str] = None,
+    attributes: dict[str, str] | None = None,
+    ordering_key: str | None = None,
 ) -> dict:
   """Publish a message to a Pub/Sub topic.
 
   Args:
-      topic_name (str): The Pub/Sub topic name (e.g. projects/my-project/topics/my-topic).
+      topic_name (str): The Pub/Sub topic name (e.g.
+        projects/my-project/topics/my-topic).
       message (str): The message content to publish.
       credentials (Credentials): The credentials to use for the request.
       settings (PubSubToolConfig): The Pub/Sub tool settings.
-      attributes (Optional[dict[str, str]]): Optional attributes to attach to the message.
-      ordering_key (Optional[str]): Optional ordering key for the message.
+      attributes (dict[str, str] | None): Attributes to attach to the message.
+      ordering_key (str | None): Ordering key for the message.
 
   Returns:
       dict: Dictionary with the message_id of the published message.
   """
+  if attributes is None:
+    attributes = {}
+
   try:
     if ordering_key:
       publisher_options = pubsub_v1.types.PublisherOptions(
@@ -60,16 +60,14 @@ def publish_message(
     )
 
     message_bytes = message.encode("utf-8")
-
     future = publisher_client.publish(
         topic_name,
         data=message_bytes,
         ordering_key=ordering_key or "",
         **(attributes or {}),
     )
-    message_id = future.result()
 
-    return {"message_id": message_id}
+    return {"message_id": future.result()}
   except Exception as ex:
     return {
         "status": "ERROR",
@@ -89,11 +87,13 @@ def pull_messages(
   """Pull messages from a Pub/Sub subscription.
 
   Args:
-      subscription_name (str): The Pub/Sub subscription name (e.g. projects/my-project/subscriptions/my-sub).
+      subscription_name (str): The Pub/Sub subscription name (e.g.
+        projects/my-project/subscriptions/my-sub).
       credentials (Credentials): The credentials to use for the request.
       settings (PubSubToolConfig): The Pub/Sub tool settings.
       max_messages (int): The maximum number of messages to pull. Defaults to 1.
-      auto_ack (bool): Whether to automatically acknowledge the messages. Defaults to False.
+      auto_ack (bool): Whether to automatically acknowledge the messages.
+        Defaults to False.
 
   Returns:
       dict: Dictionary with the list of pulled messages.
@@ -149,15 +149,16 @@ def pull_messages(
 
 def acknowledge_messages(
     subscription_name: str,
-    ack_ids: List[str],
+    ack_ids: list[str],
     credentials: Credentials,
     settings: PubSubToolConfig,
 ) -> dict:
   """Acknowledge messages on a Pub/Sub subscription.
 
   Args:
-      subscription_name (str): The Pub/Sub subscription name (e.g. projects/my-project/subscriptions/my-sub).
-      ack_ids (List[str]): List of acknowledgment IDs to acknowledge.
+      subscription_name (str): The Pub/Sub subscription name (e.g.
+        projects/my-project/subscriptions/my-sub).
+      ack_ids (list[str]): List of acknowledgment IDs to acknowledge.
       credentials (Credentials): The credentials to use for the request.
       settings (PubSubToolConfig): The Pub/Sub tool settings.
 

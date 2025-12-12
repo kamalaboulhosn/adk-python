@@ -42,14 +42,14 @@ async def test_pubsub_toolset_tools_default():
   assert tools is not None
 
   assert len(tools) == 3
-  assert all([isinstance(tool, GoogleTool) for tool in tools])
+  assert all(isinstance(tool, GoogleTool) for tool in tools)
 
   expected_tool_names = set([
       "publish_message",
       "pull_messages",
       "acknowledge_messages",
   ])
-  actual_tool_names = set([tool.name for tool in tools])
+  actual_tool_names = {tool.name for tool in tools}
   assert actual_tool_names == expected_tool_names
 
 
@@ -69,6 +69,9 @@ async def test_pubsub_toolset_tools_selective(selected_tools):
   This test verifies the behavior of the PubSub toolset when filter is
   specified. A use case for this would be when the agent builder wants to
   use only a subset of the tools provided by the toolset.
+
+  Args:
+    selected_tools: The list of tools to select from the toolset.
   """
   credentials_config = PubSubCredentialsConfig(
       client_id="abc", client_secret="def"
@@ -80,10 +83,10 @@ async def test_pubsub_toolset_tools_selective(selected_tools):
   assert tools is not None
 
   assert len(tools) == len(selected_tools)
-  assert all([isinstance(tool, GoogleTool) for tool in tools])
+  assert all(isinstance(tool, GoogleTool) for tool in tools)
 
   expected_tool_names = set(selected_tools)
-  actual_tool_names = set([tool.name for tool in tools])
+  actual_tool_names = {tool.name for tool in tools}
   assert actual_tool_names == expected_tool_names
 
 
@@ -104,6 +107,10 @@ async def test_pubsub_toolset_unknown_tool(selected_tools, returned_tools):
 
   This test verifies the behavior of the PubSub toolset when filter is
   specified with an unknown tool.
+
+  Args:
+    selected_tools: The list of tools to select from the toolset.
+    returned_tools: The list of tools that are expected to be returned.
   """
   credentials_config = PubSubCredentialsConfig(
       client_id="abc", client_secret="def"
@@ -117,8 +124,8 @@ async def test_pubsub_toolset_unknown_tool(selected_tools, returned_tools):
   assert tools is not None
 
   assert len(tools) == len(returned_tools)
-  assert all([isinstance(tool, GoogleTool) for tool in tools])
+  assert all(isinstance(tool, GoogleTool) for tool in tools)
 
   expected_tool_names = set(returned_tools)
-  actual_tool_names = set([tool.name for tool in tools])
+  actual_tool_names = {tool.name for tool in tools}
   assert actual_tool_names == expected_tool_names

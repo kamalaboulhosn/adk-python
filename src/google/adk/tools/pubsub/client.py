@@ -14,9 +14,8 @@
 
 from __future__ import annotations
 
-from typing import List
-from typing import Optional
-from typing import Union
+import threading
+import time
 
 from google.api_core.gapic_v1.client_info import ClientInfo
 from google.auth.credentials import Credentials
@@ -27,20 +26,17 @@ from ... import version
 
 USER_AGENT = f"adk-pubsub-tool google-adk/{version.__version__}"
 
-
-import threading
-import time
+_CACHE_TTL = 1800  # 30 minutes
 
 _publisher_client_cache = {}
 _publisher_client_lock = threading.Lock()
-_CACHE_TTL = 1800  # 30 minutes
 
 
 def get_publisher_client(
     *,
     credentials: Credentials,
-    user_agent: Optional[Union[str, List[str]]] = None,
-    publisher_options: Optional[pubsub_v1.types.PublisherOptions] = None,
+    user_agent: str | list[str] | None = None,
+    publisher_options: pubsub_v1.types.PublisherOptions | None = None,
 ) -> pubsub_v1.PublisherClient:
   """Get a Pub/Sub Publisher client.
 
@@ -76,11 +72,11 @@ def get_publisher_client(
       if isinstance(user_agent, str):
         user_agents.append(user_agent)
       else:
-        user_agents.extend([ua for ua in user_agent if ua])
+        user_agents.extend(ua for ua in user_agent if ua)
 
     client_info = ClientInfo(user_agent=" ".join(user_agents))
 
-    # Since we syncrhonously publish messages, we want to disable batching to
+    # Since we synchronously publish messages, we want to disable batching to
     # remove any delay.
     custom_batch_settings = BatchSettings(max_messages=1)
     publisher_client = pubsub_v1.PublisherClient(
@@ -102,7 +98,7 @@ _subscriber_client_lock = threading.Lock()
 def get_subscriber_client(
     *,
     credentials: Credentials,
-    user_agent: Optional[Union[str, List[str]]] = None,
+    user_agent: str | list[str] | None = None,
 ) -> pubsub_v1.SubscriberClient:
   """Get a Pub/Sub Subscriber client.
 
@@ -137,7 +133,7 @@ def get_subscriber_client(
       if isinstance(user_agent, str):
         user_agents.append(user_agent)
       else:
-        user_agents.extend([ua for ua in user_agent if ua])
+        user_agents.extend(ua for ua in user_agent if ua)
 
     client_info = ClientInfo(user_agent=" ".join(user_agents))
 
@@ -162,4 +158,6 @@ def cleanup_clients():
     _publisher_client_cache.clear()
 
   with _subscriber_client_lock:
+    for client, _ in _subscriber_client_cache.values():
+      client.close()
     _subscriber_client_cache.clear()

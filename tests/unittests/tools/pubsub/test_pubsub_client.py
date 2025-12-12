@@ -32,10 +32,10 @@ def cleanup_pubsub_clients():
   client.cleanup_clients()
 
 
-@mock.patch("google.cloud.pubsub_v1.PublisherClient")
+@mock.patch.object(pubsub_v1, "PublisherClient", autospec=True)
 def test_get_publisher_client(mock_publisher_client):
   """Test get_publisher_client factory."""
-  mock_creds = mock.Mock(spec=Credentials)
+  mock_creds = mock.create_autospec(Credentials, instance=True, spec_set=True)
   client.get_publisher_client(credentials=mock_creds)
 
   mock_publisher_client.assert_called_once()
@@ -46,11 +46,13 @@ def test_get_publisher_client(mock_publisher_client):
   assert kwargs["batch_settings"].max_messages == 1
 
 
-@mock.patch("google.cloud.pubsub_v1.PublisherClient")
+@mock.patch.object(pubsub_v1, "PublisherClient", autospec=True)
 def test_get_publisher_client_with_options(mock_publisher_client):
   """Test get_publisher_client factory with options."""
-  mock_creds = mock.Mock(spec=Credentials)
-  mock_options = mock.Mock(spec=pubsub_v1.types.PublisherOptions)
+  mock_creds = mock.create_autospec(Credentials, instance=True, spec_set=True)
+  mock_options = mock.create_autospec(
+      pubsub_v1.types.PublisherOptions, instance=True, spec_set=True
+  )
   client.get_publisher_client(
       credentials=mock_creds, publisher_options=mock_options
   )
@@ -64,13 +66,13 @@ def test_get_publisher_client_with_options(mock_publisher_client):
   assert kwargs["batch_settings"].max_messages == 1
 
 
-@mock.patch("google.cloud.pubsub_v1.PublisherClient")
+@mock.patch.object(pubsub_v1, "PublisherClient", autospec=True)
 def test_get_publisher_client_caching(mock_publisher_client):
   """Test get_publisher_client caching behavior."""
   # Configure mock to return different instances
   mock_publisher_client.side_effect = [mock.Mock(), mock.Mock()]
 
-  mock_creds = mock.Mock(spec=Credentials)
+  mock_creds = mock.create_autospec(Credentials, instance=True, spec_set=True)
 
   # First call - should create client
   client1 = client.get_publisher_client(credentials=mock_creds)
@@ -82,16 +84,16 @@ def test_get_publisher_client_caching(mock_publisher_client):
   mock_publisher_client.assert_called_once()  # Still called only once
 
   # Call with different args - should create new client
-  mock_creds2 = mock.Mock(spec=Credentials)
+  mock_creds2 = mock.create_autospec(Credentials, instance=True, spec_set=True)
   client3 = client.get_publisher_client(credentials=mock_creds2)
   assert client3 is not client1
   assert mock_publisher_client.call_count == 2
 
 
-@mock.patch("google.cloud.pubsub_v1.SubscriberClient")
+@mock.patch.object(pubsub_v1, "SubscriberClient", autospec=True)
 def test_get_subscriber_client(mock_subscriber_client):
   """Test get_subscriber_client factory."""
-  mock_creds = mock.Mock(spec=Credentials)
+  mock_creds = mock.create_autospec(Credentials, instance=True, spec_set=True)
   client.get_subscriber_client(credentials=mock_creds)
 
   mock_subscriber_client.assert_called_once()
@@ -100,13 +102,13 @@ def test_get_subscriber_client(mock_subscriber_client):
   assert "client_info" in kwargs
 
 
-@mock.patch("google.cloud.pubsub_v1.SubscriberClient")
+@mock.patch.object(pubsub_v1, "SubscriberClient", autospec=True)
 def test_get_subscriber_client_caching(mock_subscriber_client):
   """Test get_subscriber_client caching behavior."""
   # Configure mock to return different instances
   mock_subscriber_client.side_effect = [mock.Mock(), mock.Mock()]
 
-  mock_creds = mock.Mock(spec=Credentials)
+  mock_creds = mock.create_autospec(Credentials, instance=True, spec_set=True)
 
   # First call - should create client
   client1 = client.get_subscriber_client(credentials=mock_creds)
@@ -118,7 +120,7 @@ def test_get_subscriber_client_caching(mock_subscriber_client):
   mock_subscriber_client.assert_called_once()  # Still called only once
 
   # Call with different args - should create new client
-  mock_creds2 = mock.Mock(spec=Credentials)
+  mock_creds2 = mock.create_autospec(Credentials, instance=True, spec_set=True)
   client3 = client.get_subscriber_client(credentials=mock_creds2)
   assert client3 is not client1
   assert mock_subscriber_client.call_count == 2

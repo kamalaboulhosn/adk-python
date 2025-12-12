@@ -23,7 +23,8 @@ definition. The rationales to have customized tool are:
    messages.
 """
 
+from .config import PubSubToolConfig
 from .pubsub_credentials import PubSubCredentialsConfig
 from .pubsub_toolset import PubSubToolset
 
-__all__ = ["PubSubCredentialsConfig", "PubSubToolset"]
+__all__ = ["PubSubCredentialsConfig", "PubSubToolConfig", "PubSubToolset"]

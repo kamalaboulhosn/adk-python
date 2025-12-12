@@ -16,14 +16,15 @@ from __future__ import annotations
 
 from pydantic import model_validator
 
-from ...utils.feature_decorator import experimental
+from ...features import experimental
+from ...features import FeatureName
 from .._google_credentials import BaseGoogleCredentialsConfig
 
 PUBSUB_TOKEN_CACHE_KEY = "pubsub_token_cache"
 PUBSUB_DEFAULT_SCOPE = ["https://www.googleapis.com/auth/pubsub"]
 
 
-@experimental
+@experimental(FeatureName.GOOGLE_CREDENTIALS_CONFIG)
 class PubSubCredentialsConfig(BaseGoogleCredentialsConfig):
   """Pub/Sub Credentials Configuration for Google API tools (Experimental).
 

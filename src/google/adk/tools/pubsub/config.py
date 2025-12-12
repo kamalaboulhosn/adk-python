@@ -14,8 +14,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
@@ -29,8 +27,9 @@ class PubSubToolConfig(BaseModel):
   # Forbid any fields not defined in the model
   model_config = ConfigDict(extra='forbid')
 
-  project_id: Optional[str] = None
+  project_id: str | None = None
   """GCP project ID to use for the Pub/Sub operations.
 
-  If not set, the project ID will be inferred from the environment or credentials.
+  If not set, the project ID will be inferred from the environment or
+  credentials.
   """

@@ -14,34 +14,31 @@
 
 from __future__ import annotations
 
-from typing import List
-from typing import Optional
-from typing import Union
-
 from google.adk.agents.readonly_context import ReadonlyContext
 from typing_extensions import override
 
-from . import client
-from . import message_tool
+from ...features import experimental
+from ...features import FeatureName
 from ...tools.base_tool import BaseTool
 from ...tools.base_toolset import BaseToolset
 from ...tools.base_toolset import ToolPredicate
 from ...tools.google_tool import GoogleTool
-from ...utils.feature_decorator import experimental
+from . import client
+from . import message_tool
 from .config import PubSubToolConfig
 from .pubsub_credentials import PubSubCredentialsConfig
 
 
-@experimental
+@experimental(FeatureName.PUBSUB_TOOLSET)
 class PubSubToolset(BaseToolset):
   """Pub/Sub Toolset contains tools for interacting with Pub/Sub topics and subscriptions."""
 
   def __init__(
       self,
       *,
-      tool_filter: Optional[Union[ToolPredicate, List[str]]] = None,
-      credentials_config: Optional[PubSubCredentialsConfig] = None,
-      pubsub_tool_config: Optional[PubSubToolConfig] = None,
+      tool_filter: ToolPredicate | list[str] | None = None,
+      credentials_config: PubSubCredentialsConfig | None = None,
+      pubsub_tool_config: PubSubToolConfig | None = None,
   ):
     super().__init__(tool_filter=tool_filter)
     self._credentials_config = credentials_config
@@ -65,8 +62,8 @@ class PubSubToolset(BaseToolset):
 
   @override
   async def get_tools(
-      self, readonly_context: Optional[ReadonlyContext] = None
-  ) -> List[BaseTool]:
+      self, readonly_context: ReadonlyContext | None = None
+  ) -> list[BaseTool]:
     """Get tools from the toolset."""
     all_tools = [
         GoogleTool(
